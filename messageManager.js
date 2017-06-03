@@ -22,8 +22,6 @@ const extractMessageText = (message) => {
 
 
 const processMessage = (message, chats) => {
-    const sentMessageUrl = `https://api.telegram.org/bot${process.env.API_ID}/sendMessage`;
-
     if (chats[message.chat.id] && chats[message.chat.id].usernames) {
         chats[message.chat.id].usernames.add(...extractMessageText(message));
     } else {

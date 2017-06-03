@@ -3,11 +3,11 @@ var app = express();
 var bodyParser = require('body-parser');
 const axios = require('axios');
 const messageManager = require('./messageManager');
-require('dotenv').config();
+const config = require('./config');
 
 let chats = {};
 
-//https://api.telegram.org/302104681:AAHIwLgGCNxZ70ETGyTwlRTIsQOZocNzySg/sendMessage
+const sentMessageUrl = `https://api.telegram.org/bot${config.API_ID}/sendMessage`;
 app.use(bodyParser.json()); // for parsing application/json
 app.use(bodyParser.urlencoded({
   extended: true
@@ -54,5 +54,5 @@ app.get('/logger', (req, res) => {
 
 // Finally, start our server
 app.listen(3000, () => {
-  console.log(`Telegram app listening on port 3000! Api Key ${process.env.API_ID}`);
+  console.log(`Telegram app listening on port 3000! Api Key ${config.API_ID}`);
 });
