@@ -21,7 +21,7 @@ app.post('/new-message', (req, res) => {
 
     if (!message) {
       // In case a message is not present, or if our message does not have the word marco in it, do nothing and return an empty response
-      return res.end()
+      return res.end('Error: message is undefined');
     }
 
     messageManager.processMessage(message, chats);
