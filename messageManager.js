@@ -17,7 +17,10 @@ const extractMessageText = (message) => {
         usernames = stripOutUserNames(message.chat.text);
     }
 
-    return usernames.length > 0 ? usernames : `Sorry we didn't get that.`;
+    if(usernames.length > 0) 
+        return usernames;
+    else 
+        throw `Sorry we didn't get that.`;
 };
 
 

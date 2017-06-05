@@ -14,18 +14,17 @@ app.use(bodyParser.urlencoded({
 })); // for parsing application/x-www-form-urlencoded
 
 app.post('/new-message', (req, res) => {
+
+  const { message } = req.body;
+  //Each message contains "text" and a "chat" object, which has an "id" which is the chat id
+
+  if (!message) {
+    // In case a message is not present, or if our message does not have the word marco in it, do nothing and return an empty response
+    return res.end('Error: message is undefined');
+  }
+
   try {
-
-    const { message } = req.body;
-    //Each message contains "text" and a "chat" object, which has an "id" which is the chat id
-
-    if (!message) {
-      // In case a message is not present, or if our message does not have the word marco in it, do nothing and return an empty response
-      return res.end('Error: message is undefined');
-    }
-
     messageManager.processMessage(message, chats);
-
     axios.post(sentMessageUrl, {
       chat_id: message.chat.id,
       text: [...chats[message.chat.id].usernames].join(' ')
@@ -38,9 +37,18 @@ app.post('/new-message', (req, res) => {
       console.log('Error :', err);
       res.end('Error :' + err);
     });
-
   } catch (err) {
-    res.end('Error', err);
+    axios.post(sentMessageUrl, {
+      chat_id: message.chat.id,
+      text: err
+    }).then(response => {
+      console.log('Error messages posted')
+      res.end('ok');
+    }).catch(err => {
+      // ...and here if it was not
+      console.log('Error :', err);
+      res.end('Error :' + err);
+    });
   }
 });
 
