@@ -55,4 +55,4 @@ typings/
 .yarn-integrity
 
 # config variables file
-config.js
+env.js

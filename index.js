@@ -3,7 +3,7 @@ var app = express();
 var bodyParser = require('body-parser');
 const axios = require('axios');
 const messageManager = require('./messageManager');
-const config = require('./config');
+const config = require('./env');
 
 let chats = {};
 
