@@ -13,8 +13,8 @@ const extractMessageText = (message) => {
         usernames = stripOutUserNames(message.new_chat_participant.username);
     } else if (message.left_chat_participant) {
         usernames = stripOutUserNames(message.left_chat_participant.username);
-    } else if (message.chat && message.chat.text) {
-        usernames = stripOutUserNames(message.chat.text);
+    } else if (message.text) {
+        usernames = stripOutUserNames(message.text);
     }
 
     if(usernames.length > 0) 

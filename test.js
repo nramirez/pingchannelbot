@@ -3,20 +3,20 @@ const messageManager = require('./messageManager');
 const defaultText = '/setusernames@pingchannelbot @username @username1';
 const message = {
   chat: {
-    id: 'exampleId',
-    text: defaultText,
-  }
+    id: 'exampleId'
+  },
+  text: defaultText
 };
 
 
 describe('message manager', () => {
   beforeEach(() => {
-    message.chat.text = defaultText;
+    message.text = defaultText;
   });
 
   describe('extractMessageText', () => {
     it('can extract 1 username', () => {
-      message.chat.text = '/setusernames@pingchannelbot @username'
+      message.text = '/setusernames@pingchannelbot @username'
 
       const usernames = messageManager.extractMessageText(message).join(' ');
       assert.equal('@username', usernames);
@@ -24,7 +24,7 @@ describe('message manager', () => {
 
     it('gets usernames as string', () => {
       const usernames = messageManager.extractMessageText(message).join(' ');
-      
+
       assert.equal('@username @username1', usernames);
     });
   });
