@@ -23,6 +23,10 @@ const extractMessageText = (message) => {
         throw `Sorry we didn't get that.`;
 };
 
+const isCommand = (entities) => {
+    return !!entities.find(e => e.type === 'bot_command');
+};
+
 const isSet = (text) => {
     return text.toLocaleLowerCase.indexOf('/set') > -1;
 };
@@ -36,25 +40,27 @@ const isClear = (text) => {
 };
 
 const joinUsernames = (usernames) => {
-    return [...usernames].join(' ');
+    return usernames.size > 0 ? [...usernames].join(' ') : 'No usernames added.';
 };
 
 const processMessage = (message, chats) => {
-    if (isSet(message.text)) {
-        if (chats[message.chat.id] && chats[message.chat.id].usernames) {
-            chats[message.chat.id].usernames.add(...extractMessageText(message));
-        } else {
-            if (!chats[message.chat.id])
-                chats[message.chat.id] = {};
+    if (isCommand(message.entities)) {
+        if (isSet(message.text)) {
+            if (chats[message.chat.id] && chats[message.chat.id].usernames) {
+                chats[message.chat.id].usernames.add(...extractMessageText(message));
+            } else {
+                if (!chats[message.chat.id])
+                    chats[message.chat.id] = {};
 
-            chats[message.chat.id].usernames = new Set(extractMessageText(message));
+                chats[message.chat.id].usernames = new Set(extractMessageText(message));
+            }
+            return joinUsernames(chats[message.chat.id].usernames);
+        } else if (isPing(message.text)) {
+            return joinUsernames(chats[message.chat.id].usernames);
+        } else if (isClear(message.text)) {
+            chats[message.chat.id].usernames.clear();
+            return 'All usernames were cleared.';
         }
-        return joinUsernames(chats[message.chat.id].usernames);
-    } else if (isPing(message.text)) {
-        return joinUsernames(chats[message.chat.id].usernames);
-    } else if (isClear(message.text)) {
-        chats[message.chat.id].usernames.clear();
-        return 'All usernames were cleared.';
     }
 };
 
