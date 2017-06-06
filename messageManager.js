@@ -28,15 +28,15 @@ const isCommand = (entities) => {
 };
 
 const isSet = (text) => {
-    return text.toLocaleLowerCase.indexOf('/set') > -1;
+    return text.toLocaleLowerCase().indexOf('/set') > -1;
 };
 
 const isPing = (text) => {
-    return text.toLocaleLowerCase.indexOf('/ping') > -1;
+    return text.toLocaleLowerCase().indexOf('/ping') > -1;
 };
 
 const isClear = (text) => {
-    return text.toLocaleLowerCase.indexOf('/clear') > -1;
+    return text.toLocaleLowerCase().indexOf('/clear') > -1;
 };
 
 const joinUsernames = (usernames) => {

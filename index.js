@@ -23,29 +23,15 @@ app.post('/new-message', (req, res) => {
     return res.end('Error: message is undefined');
   }
 
-  try {
-    const text = messageManager.processMessage(message, chats);
+  const text = messageManager.processMessage(message, chats);
 
-    if (text) {
-      axios.post(sentMessageUrl, {
-        chat_id: message.chat.id,
-        text: text,
-      }).then(response => {
-        // We get here if the message was successfully posted
-        console.log('Message posted')
-        res.end('ok');
-      }).catch(err => {
-        // ...and here if it was not
-        console.log('Error :', err);
-        res.end('Error :' + err);
-      });
-    }
-  } catch (err) {
+  if (text) {
     axios.post(sentMessageUrl, {
       chat_id: message.chat.id,
-      text: err
+      text: text,
     }).then(response => {
-      console.log('Error messages posted')
+      // We get here if the message was successfully posted
+      console.log('Message posted')
       res.end('ok');
     }).catch(err => {
       // ...and here if it was not

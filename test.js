@@ -5,7 +5,14 @@ const message = {
   chat: {
     id: 'exampleId'
   },
-  text: defaultText
+  text: defaultText,
+  entities: [
+      {
+        type: "bot_command",
+        offset: 0,
+        length: 28,
+      }
+  ],
 };
 
 
