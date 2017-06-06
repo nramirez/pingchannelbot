@@ -1,4 +1,4 @@
-const botRelatedUserNames = ['/setusernames', 'setusernames', 'pingchannelbot'];
+const botRelatedUserNames = ['/set', 'pingchannelbot'];
 const stripOutBotRelatedUserNames = (usernames) => {
     return usernames.filter(u => botRelatedUserNames.indexOf(u) === -1);
 };
@@ -24,7 +24,7 @@ const extractMessageText = (message) => {
 };
 
 const isCommand = (entities) => {
-    return !!entities.find(e => e.type === 'bot_command');
+    return entities && !!entities.find(e => e.type === 'bot_command');
 };
 
 const isSet = (text) => {
@@ -56,9 +56,11 @@ const processMessage = (message, chats) => {
             }
             return joinUsernames(chats[message.chat.id].usernames);
         } else if (isPing(message.text)) {
-            return joinUsernames(chats[message.chat.id].usernames);
-        } else if (isClear(message.text)) {
-            chats[message.chat.id].usernames.clear();
+            if(chats[message.chat.id].usernames)
+                return joinUsernames(chats[message.chat.id].usernames);
+        } else if (isClear(message.text)) {            
+            if(chats[message.chat.id].usernames)
+                chats[message.chat.id].usernames.clear();
             return 'All usernames were cleared.';
         }
     }
