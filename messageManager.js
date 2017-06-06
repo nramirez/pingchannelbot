@@ -23,15 +23,38 @@ const extractMessageText = (message) => {
         throw `Sorry we didn't get that.`;
 };
 
+const isSet = (text) => {
+    return text.toLocaleLowerCase.indexOf('/set') > -1;
+};
+
+const isPing = (text) => {
+    return text.toLocaleLowerCase.indexOf('/ping') > -1;
+};
+
+const isClear = (text) => {
+    return text.toLocaleLowerCase.indexOf('/clear') > -1;
+};
+
+const joinUsernames = (usernames) => {
+    return [...usernames].join(' ');
+};
 
 const processMessage = (message, chats) => {
-    if (chats[message.chat.id] && chats[message.chat.id].usernames) {
-        chats[message.chat.id].usernames.add(...extractMessageText(message));
-    } else {
-        if (!chats[message.chat.id])
-            chats[message.chat.id] = {};
+    if (isSet(message.text)) {
+        if (chats[message.chat.id] && chats[message.chat.id].usernames) {
+            chats[message.chat.id].usernames.add(...extractMessageText(message));
+        } else {
+            if (!chats[message.chat.id])
+                chats[message.chat.id] = {};
 
-        chats[message.chat.id].usernames = new Set(extractMessageText(message));
+            chats[message.chat.id].usernames = new Set(extractMessageText(message));
+        }
+        return joinUsernames(chats[message.chat.id].usernames);
+    } else if (isPing(message.text)) {
+        return joinUsernames(chats[message.chat.id].usernames);
+    } else if (isClear(message.text)) {
+        chats[message.chat.id].usernames.clear();
+        return 'All usernames were cleared.';
     }
 };
 

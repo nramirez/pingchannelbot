@@ -24,19 +24,22 @@ app.post('/new-message', (req, res) => {
   }
 
   try {
-    messageManager.processMessage(message, chats);
-    axios.post(sentMessageUrl, {
-      chat_id: message.chat.id,
-      text: [...chats[message.chat.id].usernames].join(' ')
-    }).then(response => {
-      // We get here if the message was successfully posted
-      console.log('Message posted')
-      res.end('ok');
-    }).catch(err => {
-      // ...and here if it was not
-      console.log('Error :', err);
-      res.end('Error :' + err);
-    });
+    const text = messageManager.processMessage(message, chats);
+
+    if (text) {
+      axios.post(sentMessageUrl, {
+        chat_id: message.chat.id,
+        text: text,
+      }).then(response => {
+        // We get here if the message was successfully posted
+        console.log('Message posted')
+        res.end('ok');
+      }).catch(err => {
+        // ...and here if it was not
+        console.log('Error :', err);
+        res.end('Error :' + err);
+      });
+    }
   } catch (err) {
     axios.post(sentMessageUrl, {
       chat_id: message.chat.id,
