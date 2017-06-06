@@ -61,6 +61,6 @@ app.get('/logger', (req, res) => {
 });
 
 // Finally, start our server
-app.listen(3000, () => {
+app.listen(process.env.PORT || 3000, () => {
   console.log(`Telegram app listening on port 3000! Api Key ${process.env.API_ID}`);
 });
