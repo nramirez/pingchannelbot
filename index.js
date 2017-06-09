@@ -72,7 +72,7 @@ app.post('/new-message', (req, res) => {
             res.end('Error updating db:', e);
           });
         } else if (messageManager.isPing(message.text)) {
-          talkToBot(chatId, usernames, res);
+          talkToBot(chatId, usernames || 'No usernames added.', res);
         } else if (messageManager.isClear(message.text)) {
           ref.set({
             usernames: ''
