@@ -91,6 +91,9 @@ app.post('/new-message', (req, res) => {
         if(message.new_chat_participant) {
           talkToBot(chatId, `${message.new_chat_participant.username} was added to the list.`, res);
         }
+        if(message.left_chat_participant) {
+          talkToBot(chatId, `${message.left_chat_participant.username} was removed from the list.`, res);
+        }
       }
       res.end('usernames', usernames);
     }).catch(error => {

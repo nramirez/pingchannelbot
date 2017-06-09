@@ -13,8 +13,9 @@ const extractValidUsernames = usernames => {
 
 const removeUsername = (usernames, user) => {
     const users = usernames.split(/(\s+)|@/g).filter(u => !!u)
-        .filter(u => u.trim() !== '');;
-    return users.filter(u => u.indexOf(user.toLocaleLowerCase()) === -1);
+        .filter(u => u.trim() !== '');
+    users.filter(u => u.indexOf(user.toLocaleLowerCase()) === -1);
+    return users.map(v => `@${v}`.toLocaleLowerCase());
 };
 
 const joinUsernames = usernames => {
