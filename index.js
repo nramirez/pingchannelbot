@@ -15,10 +15,10 @@ var config = {
 
 firebase.initializeApp(config);
 const db = firebase.database();
-app.use(bodyParser.json()); // for parsing application/json
+app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
   extended: true
-})); // for parsing application/x-www-form-urlencoded
+}));
 
 const talkToBot = (chatId, text, res) => {
   axios.post(`https://api.telegram.org/bot${process.env.API_ID}/sendMessage`, {
@@ -36,15 +36,14 @@ const talkToBot = (chatId, text, res) => {
 }
 
 app.post('/new-message', (req, res) => {
-  console.log(JSON.stringify(req.body));
   const { message } = req.body;
-  //Each message contains 'text' and a 'chat' object, which has an 'id' which is the chat id
 
+  //Each message contains 'text' and a 'chat' object, which has an 'id' which is the chat id
   if (!message) {
     // In case a message is not present, or if our message does not have the word marco in it, do nothing and return an empty response
     return res.end('Error: message is undefined');
   }
-  //TODO: is this really a thing?
+  
   // Somehow we're getting a message with { message: [knownObject], update_id: 32413}
   // We're only interested in the message object
   if (message.message)
@@ -106,7 +105,7 @@ app.post('/new-message', (req, res) => {
     res.end('Error somewhere: ', err);
   }
 
-  res.end('Terminamos');
+  res.end('All done!');
 });
 
 app.get('/', (req, res) => {
