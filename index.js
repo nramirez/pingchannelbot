@@ -12,6 +12,7 @@ var config = {
   databaseURL: 'https://pingchannelbot.firebaseio.com',
   storageBucket: 'pingchannelbot.appspot.com',
 };
+
 firebase.initializeApp(config);
 const db = firebase.database();
 app.use(bodyParser.json()); // for parsing application/json
@@ -56,7 +57,7 @@ app.post('/new-message', (req, res) => {
       const chat = snapshot.val();
       const usernames = chat && chat.usernames ? chat.usernames : '';
       console.log('le usernames', chat, usernames);
-      if(chat && chat.message_id && chat.message_id > message.message_id) {
+      if (chat && chat.message_id && chat.message_id > message.message_id) {
         console.log('discarting old message', chat.message_id, message.message_id);
         return res.end('Error: message is undefined');
       }
@@ -68,6 +69,7 @@ app.post('/new-message', (req, res) => {
             'usernames': '' + messageManager.extractUniqueUsernames(message, usernames)
           }).catch(e => {
             console.log('Error updating db:', e);
+            res.end('Error updating db:', e);
           });
         } else if (messageManager.isPing(message.text)) {
           talkToBot(chatId, usernames, res);
@@ -85,12 +87,15 @@ app.post('/new-message', (req, res) => {
       res.end('usernames', usernames);
     }).catch(error => {
       console.log('Error reading db:', error);
+      res.end('Error reading db:', error);
     });
   } catch (err) {
     console.log('Error somewhere: ', err);
     talkToBot(chatId, `Sorry we didn't get that`, res);
     res.end('Error somewhere: ', err);
   }
+
+  res.end('Terminamos');
 });
 
 app.get('/', (req, res) => {
