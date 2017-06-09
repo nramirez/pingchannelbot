@@ -68,6 +68,7 @@ app.post('/new-message', (req, res) => {
             'message_id': message.message_id,
             'usernames': '' + messageManager.extractUniqueUsernames(message, usernames)
           }).then(m => {
+            talkToBot(chatId, 'Usernames added.', res);
             console.log('Updated message:', m);
             res.end('Updated message:', m);
           }).catch(e => {
