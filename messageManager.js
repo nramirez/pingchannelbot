@@ -1,73 +1,50 @@
-const botRelatedUserNames = ['/set', 'pingchannelbot'];
-const stripOutBotRelatedUserNames = (usernames) => {
+const botRelatedUserNames = ['/set', 'pingchannelbot', '/ping'];
+const stripOutBotRelatedUserNames = usernames => {
     return usernames.filter(u => botRelatedUserNames.indexOf(u) === -1);
 };
-const stripOutUserNames = (message) => {
-    const usernames = message.split('@').map(u => u.trim());
-    const validUsernames = stripOutBotRelatedUserNames(usernames);
-    return validUsernames.map(v => `@${v}`);
-}
-const extractMessageText = (message) => {
-    let usernames = [];
-    if (message.new_chat_participant) {
-        usernames = stripOutUserNames(message.new_chat_participant.username);
-    } else if (message.left_chat_participant) {
-        usernames = stripOutUserNames(message.left_chat_participant.username);
-    } else if (message.text) {
-        usernames = stripOutUserNames(message.text);
-    }
 
-    if(usernames.length > 0) 
-        return usernames;
-    else 
-        throw `Sorry we didn't get that.`;
+const extractValidUsernames = usernames => {
+    const users = usernames.split(/(\s+)|@/g).filter(u => !!u)
+        .filter(u => u.trim() !== '');
+
+    const validUsernames = stripOutBotRelatedUserNames(users);
+    return validUsernames.map(v => `@${v}`.toLocaleLowerCase());
 };
 
-const isCommand = (entities) => {
-    return entities && !!entities.find(e => e.type === 'bot_command');
+const removeUsername = (usernames, user) => {
+    const users = usernames.split(/(\s+)|@/g).filter(u => !!u)
+        .filter(u => u.trim() !== '');;
+    return users.filter(u => u.indexOf(user.toLocaleLowerCase()) === -1);
 };
 
-const isSet = (text) => {
-    return text.toLocaleLowerCase().indexOf('/set') > -1;
-};
-
-const isPing = (text) => {
-    return text.toLocaleLowerCase().indexOf('/ping') > -1;
-};
-
-const isClear = (text) => {
-    return text.toLocaleLowerCase().indexOf('/clear') > -1;
-};
-
-const joinUsernames = (usernames) => {
+const joinUsernames = usernames => {
     return usernames.size > 0 ? [...usernames].join(' ') : 'No usernames added.';
 };
 
-const processMessage = (message, chats) => {
-    if (isCommand(message.entities)) {
-        if (isSet(message.text)) {
-            if (chats[message.chat.id] && chats[message.chat.id].usernames) {
-                chats[message.chat.id].usernames.add(...extractMessageText(message));
-            } else {
-                if (!chats[message.chat.id])
-                    chats[message.chat.id] = {};
-
-                chats[message.chat.id].usernames = new Set(extractMessageText(message));
-            }
-            return joinUsernames(chats[message.chat.id].usernames);
-        } else if (isPing(message.text)) {
-            if(chats[message.chat.id].usernames)
-                return joinUsernames(chats[message.chat.id].usernames);
-        } else if (isClear(message.text)) {            
-            if(chats[message.chat.id].usernames)
-                chats[message.chat.id].usernames.clear();
-            return 'All usernames were cleared.';
-        }
+const extractUniqueUsernames = (message, usernames) => {
+    if (message.new_chat_participant) {
+        usernames += ' ' + message.new_chat_participant.username;
+    } else if (message.text) {
+        usernames += ' ' + message.text;
     }
-};
 
+    let users = [];
+    if (message.left_chat_participant) {
+        users = removeUsername(usernames, message.left_chat_participant.username);
+    } else {
+        users = extractValidUsernames(usernames);
+    }
+
+    if (users.length > 0)
+        return joinUsernames(new Set(users));
+    else
+        throw `Sorry we didn't get that.`;
+};
 
 module.exports = {
-    extractMessageText,
-    processMessage: (m, c) => processMessage(m, c)
-};
+    extractUniqueUsernames,
+    isCommand: entities => entities && entities.filter(e => e.type === 'bot_command').length,
+    isSet: text => text.toLocaleLowerCase().indexOf('/set') > -1,
+    isPing: text => text.toLocaleLowerCase().indexOf('/ping') > -1,
+    isClear: text => text.toLocaleLowerCase().indexOf('/clear') > -1
+}
