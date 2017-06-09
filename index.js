@@ -67,6 +67,9 @@ app.post('/new-message', (req, res) => {
           ref.update({
             'message_id': message.message_id,
             'usernames': '' + messageManager.extractUniqueUsernames(message, usernames)
+          }).then(m => {
+            console.log('Updated message:', m);
+            res.end('Updated message:', m);
           }).catch(e => {
             console.log('Error updating db:', e);
             res.end('Error updating db:', e);
