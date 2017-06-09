@@ -1,4 +1,4 @@
-const botRelatedUserNames = ['/set', '/channel', '/here', 'pingchannelbot'];
+const botRelatedUserNames = ['/set', 'pingchannelbot'];
 const stripOutBotRelatedUserNames = usernames => {
     return usernames.filter(u => botRelatedUserNames.indexOf(u) === -1);
 };
@@ -47,9 +47,9 @@ const extractUniqueUsernames = (message, usernames) => {
 module.exports = {
     extractUniqueUsernames,
     isCommand: entities => entities && entities.filter(e => e.type === 'bot_command').length,
-    isSet: text => (text.toLocaleLowerCase().indexOf('/set') > -1 ||
+    isSet: text => text.toLocaleLowerCase().indexOf('/set') > -1,
+    isPing: text => (text.toLocaleLowerCase().indexOf('/ping') > -1 ||
         text.toLocaleLowerCase().indexOf('/channel') > -1 ||
         text.toLocaleLowerCase().indexOf('/here') > -1),
-    isPing: text => text.toLocaleLowerCase().indexOf('/ping') > -1,
     isClear: text => text.toLocaleLowerCase().indexOf('/clear') > -1
 }
