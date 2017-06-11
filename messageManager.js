@@ -51,5 +51,5 @@ module.exports = {
     isPing: text => (text.toLocaleLowerCase().indexOf('/ping') > -1 ||
         text.toLocaleLowerCase().indexOf('/channel') > -1 ||
         text.toLocaleLowerCase().indexOf('/here') > -1),
-    isClear: text => text.toLocaleLowerCase().indexOf('/clear') > -1
-}
+    isClear: text => text.toLocaleLowerCase().indexOf('/clear') > -1,
+};

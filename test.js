@@ -26,7 +26,6 @@ describe('message manager', () => {
     it('can extract 1 username', () => {
       let users = '';
       message.text = '/set@pingchannelbot @username';
-
       const usernames = messageManager.extractUniqueUsernames(message, users);
 
       assert.strictEqual('@username', usernames);
@@ -34,7 +33,6 @@ describe('message manager', () => {
 
     it('gets usernames as string', () => {
       let users = 'username';
-
       const usernames = messageManager.extractUniqueUsernames(message, users);
 
       assert.strictEqual('@username @username1', usernames);
@@ -44,17 +42,7 @@ describe('message manager', () => {
   describe('newMessageRequest', () => {
     it('initializes usernames from messages', () => {
       let users = '';
-
       const text = messageManager.extractUniqueUsernames(message, users);
-
-      assert.strictEqual(text, '@username @username1');
-    });
-
-    it('pings', () => {
-      message.text = '/ping';
-      let usernames = '@username @username1';
-
-      const text = messageManager.extractUniqueUsernames(message, usernames);
 
       assert.strictEqual(text, '@username @username1');
     });
