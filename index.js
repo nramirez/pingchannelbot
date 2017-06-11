@@ -109,7 +109,7 @@ const setUsernames = (message, chatId, usernames, ref, res) => {
 
 const pingAll = (chatId, text, res) => {
   telegramManager.talkToBot(chatId, text).then(() => {
-    res.end('Message posted: ', text);
+    res.end('Message posted!');
   }, err => {
     console.log(err);
     res.end('Error: ', err);
@@ -121,7 +121,7 @@ const clearUsernames = (message, chatId, ref, res) => {
     telegramManager.getChatAdministrators(chatId).then(({ data }) => {
       if (isAdmin(data.result, message.from.username)) {
         ref.set({
-          usernames: ''
+          usernames: '',
         });
         telegramManager.talkToBot(chatId, 'All cleared.').then(() => {
           res.end('All cleared.');
