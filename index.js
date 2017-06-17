@@ -5,6 +5,7 @@ const messageManager = require('./messageManager');
 const telegramManager = require('./telegramManager');
 const firebase = require('firebase');
 const config = require('./config');
+var mixpanel = require('mixpanel').init(config.mixpanelToken);
 
 firebase.initializeApp(config.firebase);
 const db = firebase.database();
@@ -16,6 +17,8 @@ app.use(bodyParser.urlencoded({
 
 app.post('/new-message', (req, res) => {
   const { message } = req.body;
+
+  mixpanel.track('new-message', message);
 
   if (!message) {
     // In case a message is not present, or if our message does not have the word marco in it, do nothing and return an empty response

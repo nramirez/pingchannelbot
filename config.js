@@ -10,4 +10,5 @@ module.exports = {
   apiId: process.env.API_ID,
   currentPort: process.env.PORT || 3000,
   telegramBaseUrl: `https://api.telegram.org/bot${process.env.API_ID}`,
+  mixpanelToken: process.env.MIXPANEL_TOKEN
 };
