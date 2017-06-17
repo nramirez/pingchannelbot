@@ -55,21 +55,22 @@ app.post('/new-message', (req, res) => {
       }
     }, error => {
       console.log('Error reading db:', error);
-      res.end('Error reading db:', error);
+      return res.end('Error reading db:', error);
     });
   } catch (err) {
     telegramManager.talkToBot(chatId, `Sorry we didn't get that`);
-    res.end('Error somewhere: ', err);
+    return res.end('Error somewhere: ', err);
   };
+
+  return res.end('end of the request');
 });
 
 app.get('/', (req, res) => {
   res.send('Bot up and running!');
 });
 
-// Finally, start our server
 app.listen(config.currentPort, () => {
-  console.log(`Telegram app listening on port ${config.currentPort}! Api Key ${config.apiId}`);
+  console.log(`Telegram app listening on port ${config.currentPort}!`);
 });
 
 const isAdmin = (admins, user) => admins.filter(admin => admin.user.username === user).length > 0;
