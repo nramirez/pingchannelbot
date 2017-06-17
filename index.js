@@ -6,6 +6,7 @@ const telegramManager = require('./telegramManager');
 const firebase = require('firebase');
 const config = require('./config');
 var mixpanel = require('mixpanel').init(config.mixpanelToken);
+var moment = require('moment');
 
 firebase.initializeApp(config.firebase);
 const db = firebase.database();
@@ -18,17 +19,29 @@ app.use(bodyParser.urlencoded({
 app.post('/new-message', (req, res) => {
   const { message } = req.body;
 
-  mixpanel.track('new-message', message);
-
   if (!message) {
     // In case a message is not present, or if our message does not have the word marco in it, do nothing and return an empty response
     return res.end('Error: message is undefined');
   }
-  
+
   // Somehow we're getting a message with { message: [knownObject], update_id: 32413}
   // We're only interested in the message object
   if (message.message)
     message = message.message;
+
+
+  let allowedDate = moment().add(-5, 'm');
+  const messageDate = moment.unix(message.date);
+  const shouldProcess = messageDate > allowedDate;
+
+  mixpanel.track('new-message', {
+    shouldProcess: shouldProcess,
+    message: message
+  });
+
+  if (!shouldProcess) {
+    return res.end('Message rejected because it is too old');
+  }
 
   try {
     const chatId = message.chat.id;
@@ -76,7 +89,7 @@ app.listen(config.currentPort, () => {
 const isAdmin = (admins, user) => admins.filter(admin => admin.user.username === user).length > 0;
 
 const setUsernames = (message, chatId, usernames, ref, res) => {
-  if(message.from) {
+  if (message.from) {
     telegramManager.getChatAdministrators(chatId).then(({ data }) => {
       if (isAdmin(data.result, message.from.username)) {
         ref.update({
@@ -121,7 +134,7 @@ const pingAll = (chatId, text, res) => {
 };
 
 const clearUsernames = (message, chatId, ref, res) => {
-  if(message.from) {
+  if (message.from) {
     telegramManager.getChatAdministrators(chatId).then(({ data }) => {
       if (isAdmin(data.result, message.from.username)) {
         ref.set({
