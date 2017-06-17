@@ -29,7 +29,6 @@ app.post('/new-message', (req, res) => {
   if (message.message)
     message = message.message;
 
-
   let allowedDate = moment().add(-5, 'm');
   const messageDate = moment.unix(message.date);
   const shouldProcess = messageDate > allowedDate;

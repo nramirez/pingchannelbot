@@ -6,7 +6,10 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js"
   },
-  "author": "",
+  "authors": [
+    "nramirez <ram.nazaret@gmail.com>",
+    "wistcc <wistcc@gmail.com>"
+  ],
   "license": "ISC",
   "dependencies": {
     "axios": "^0.16.1",
