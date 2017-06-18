@@ -1,5 +1,5 @@
 const extractValidUsernames = usernames => {
-    var matches = usernames.match(/@[^\s|@]*/g);
+    const matches = usernames.match(/@[^\s|@]*/g);
     return matches ? matches.filter(u => u !== '@pingchannelbot') : [];
 };
 

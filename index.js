@@ -63,7 +63,7 @@ app.post('/new-message', (req, res) => {
           clearUsernames(message, chatId, ref, res);
         }
       } else if (message.new_chat_participant || message.left_chat_participant) {
-        addOrRemoveParticipant(message, chatId, usernames, ref, res);
+        return addOrRemoveParticipant(message, chatId, usernames, ref, res);
       }
     }, error => {
       console.log('Error reading db:', error);
@@ -164,6 +164,12 @@ const clearUsernames = (message, chatId, ref, res) => {
 };
 
 const addOrRemoveParticipant = (message, chatId, usernames, ref, res) => {
+  const isValid = (message.new_chat_participant && message.new_chat_participant.username)
+    || (message.left_chat_participant && message.left_chat_participant.username);
+  
+  if (!isValid)
+    return res.end('Undefined username');
+
   ref.set({
     'usernames': messageManager.extractUniqueUsernames(message, usernames),
   });
@@ -173,9 +179,9 @@ const addOrRemoveParticipant = (message, chatId, usernames, ref, res) => {
     `${message.left_chat_participant.username} was removed from the list.`;
 
   telegramManager.talkToBot(chatId, msg).then(() => {
-    res.end(msg);
+    return res.end(msg);
   }, err => {
     console.log(err);
-    res.end('Error: ', err);
+    return res.end('Error: ', err);
   });
 };
