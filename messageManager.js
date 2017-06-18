@@ -1,41 +1,26 @@
-const botRelatedUserNames = ['/set', 'pingchannelbot'];
-const stripOutBotRelatedUserNames = usernames => {
-    return usernames.filter(u => botRelatedUserNames.indexOf(u) === -1);
-};
-
 const extractValidUsernames = usernames => {
-    const users = usernames.split(/(\s+)|@/g).filter(u => !!u)
-        .filter(u => u.trim() !== '');
-
-    const validUsernames = stripOutBotRelatedUserNames(users);
-    return validUsernames.map(v => `@${v}`.toLocaleLowerCase());
+    var matches = usernames.match(/@[^\s|@]*/g);
+    return matches ? matches.filter(u => u !== '@pingchannelbot') : [];
 };
 
-const removeUsername = (usernames, user) => {
-    const users = usernames.split(/(\s+)|@/g)
-        .filter(u => !!u)
-        .filter(u => u.trim() !== '')
-        .filter(u => u.indexOf(user.toLocaleLowerCase()) === -1);
-
-    return users.map(v => `@${v}`.toLocaleLowerCase());
-};
-
-const joinUsernames = usernames => {
-    return usernames.size > 0 ? [...usernames].join(' ') : 'No usernames added.';
-};
+const joinUsernames = usernames => usernames.size > 0
+    ? [...usernames].join(' ')
+    : 'No usernames added.';
 
 const extractUniqueUsernames = (message, usernames) => {
     if (message.new_chat_participant) {
-        usernames += ' ' + message.new_chat_participant.username;
+        if(message.new_chat_participant.username)
+            usernames += ` @${message.new_chat_participant.username}`;
     } else if (message.text) {
         usernames += ' ' + message.text;
     }
 
-    let users = [];
+    let users = extractValidUsernames(usernames);
+
     if (message.left_chat_participant) {
-        users = removeUsername(usernames, message.left_chat_participant.username);
-    } else {
-        users = extractValidUsernames(usernames);
+        if(message.left_chat_participant.username) {
+            users = users.filter(u => u !== `@${message.left_chat_participant.username}`);
+        }
     }
 
     if (users.length > 0)
