@@ -57,11 +57,26 @@ app.post('/new-message', (req, res) => {
       if (messageManager.isCommand(message.entities)) {
         if (messageManager.isSet(message.text)) {
           setUsernames(message, chatId, usernames, ref, res);
+        } else if (messageManager.isPingAll(message.text)) {
+          return pingAll(chatId, usernames || 'No usernames added. Use set command to add them.', res);
         } else if (messageManager.isPing(message.text)) {
-          pingAll(chatId, usernames || 'No usernames added. Use set command to add them.', res);
+          return pingTeam(message, chatId, chat, res);
         } else if (messageManager.isClear(message.text)) {
           clearUsernames(message, chatId, ref, res);
+        } else if (messageManager.isReadTeams(message.text)) {
+          return readTeams(chatId, chat, res);
+        } else if (messageManager.isSetTeam(message.text)) {
+          return setTeam(message, chatId, ref, res);
         }
+      } else if (messageManager.isReplyToSetTeamName(message)) {
+        message.text = '/team ' + message.text;
+        return setTeam(message, chatId, ref, res);
+      } else if (messageManager.isReplyToSetTeamUsers(message)) {
+        // Which users will be part of teamName?
+        const text = message.reply_to_message.text;
+        const teamName = text.substring(28, text.length - 1);
+        message.text = `/team ${teamName} ${message.text}`;
+        return setTeam(message, chatId, ref, res);
       } else if (message.new_chat_participant || message.left_chat_participant) {
         return addOrRemoveParticipant(message, chatId, usernames, ref, res);
       }
@@ -92,26 +107,26 @@ const setUsernames = (message, chatId, usernames, ref, res) => {
     telegramManager.getChatAdministrators(chatId).then(({ data }) => {
       if (isAdmin(data.result, message.from.username)) {
         ref.update({
-          'message_id': message.message_id,
-          'usernames': messageManager.extractUniqueUsernames(message, usernames),
+          message_id: message.message_id,
+          usernames: messageManager.extractUniqueUsernames(message, usernames),
         }).then(m => {
-          telegramManager.talkToBot(chatId, 'Usernames added.').then(() => {
-            res.end('Updated message:', m);
-          }, err => {
-            console.log(err);
-            res.end('Error: ', err);
-          });
-        }, e => {
+          telegramManager.talkToBot(chatId, 'Usernames added.')
+            .then(() => res.end('Updated message:', m))
+            .catch(err => {
+              console.log(err);
+              res.end('Error: ', err);
+            });
+        }).catch(e => {
           console.log('Error updating db:', e);
           res.end('Error updating db:', e);
         });
       } else {
-        telegramManager.talkToBot(chatId, 'This action is only allowed for admins.').then(() => {
-          res.end('This action is only allowed for admins.');
-        }, err => {
-          console.log(err);
-          res.end('Error: ', err);
-        });
+        telegramManager.talkToBot(chatId, 'This action is only allowed for admins.')
+          .then(() => res.end('This action is only allowed for admins.'))
+          .catch(err => {
+            console.log(err);
+            res.end('Error: ', err);
+          });
       }
     }, err => {
       console.log(err);
@@ -124,39 +139,60 @@ const setUsernames = (message, chatId, usernames, ref, res) => {
 };
 
 const pingAll = (chatId, text, res) => {
-  telegramManager.talkToBot(chatId, text).then(() => {
-    res.end('Message posted!');
-  }, err => {
-    console.log(err);
-    res.end('Error: ', err);
-  });
+  telegramManager.talkToBot(chatId, text)
+    .then(() => res.end('Message posted!'))
+    .catch(err => {
+      console.log(err);
+      return res.end('Error: ', err);
+    });
+};
+
+const pingTeam = (message, chatId, chat, res) => {
+  // /ping team-name
+  const teamName = message.text.substr(5).trim();
+  let msg = 'No users in this team.';
+  if (!teamName) {
+    msg = 'Please specify the name of the team';
+  } else if (!chat[teamName])
+    msg = 'No users in this team.';
+  else {
+    msg = chat[teamName];
+  }
+
+  telegramManager.talkToBot(chatId, msg)
+    .then(() => res.end('Message posted!'))
+    .catch(err => {
+      console.log(err);
+      return res.end('Error: ', err);
+    });
 };
 
 const clearUsernames = (message, chatId, ref, res) => {
   if (message.from) {
-    telegramManager.getChatAdministrators(chatId).then(({ data }) => {
-      if (isAdmin(data.result, message.from.username)) {
-        ref.set({
-          usernames: '',
-        });
-        telegramManager.talkToBot(chatId, 'All cleared.').then(() => {
-          res.end('All cleared.');
-        }, err => {
-          console.log(err);
-          res.end('Error: ', err);
-        });
-      } else {
-        telegramManager.talkToBot(chatId, 'This action is only allowed for admins.').then(() => {
-          res.end('This action is only allowed for admins.');
-        }, err => {
-          console.log(err);
-          res.end('Error: ', err);
-        });
-      }
-    }, err => {
-      console.log(err);
-      res.end('Error: ', err);
-    });
+    telegramManager.getChatAdministrators(chatId)
+      .then(({ data }) => {
+        if (isAdmin(data.result, message.from.username)) {
+          ref.set({
+            usernames: '',
+          });
+          telegramManager.talkToBot(chatId, 'All cleared.').then(() => {
+            res.end('All cleared.');
+          }, err => {
+            console.log(err);
+            res.end('Error: ', err);
+          });
+        } else {
+          telegramManager.talkToBot(chatId, 'This action is only allowed for admins.').then(() => {
+            res.end('This action is only allowed for admins.');
+          }, err => {
+            console.log(err);
+            res.end('Error: ', err);
+          });
+        }
+      }, err => {
+        console.log(err);
+        res.end('Error: ', err);
+      });
   } else {
     console.log('Error message.from is undefined');
     res.end('Error message.from is undefined');
@@ -166,7 +202,7 @@ const clearUsernames = (message, chatId, ref, res) => {
 const addOrRemoveParticipant = (message, chatId, usernames, ref, res) => {
   const isValid = (message.new_chat_participant && message.new_chat_participant.username)
     || (message.left_chat_participant && message.left_chat_participant.username);
-  
+
   if (!isValid)
     return res.end('Undefined username');
 
@@ -185,3 +221,49 @@ const addOrRemoveParticipant = (message, chatId, usernames, ref, res) => {
     return res.end('Error: ', err);
   });
 };
+
+const readTeams = (chatId, chat, res) => {
+  const teams = Object.keys(chat).filter(t => t !== 'usernames').join('\n');
+  telegramManager.talkToBot(chatId, teams)
+    .then(t => res.end('Team list displayed', t))
+    .catch(e => res.end('Team list error', e));
+
+};
+const setTeam = (message, chatId, ref, res) => {
+  // remove '/team' from the text which length = 5
+  const text = message.text.substr(5).trim();
+  const emptyIndex = text.indexOf(' ');
+  const teamName = emptyIndex < 0 ? text : text.substr(0, emptyIndex);
+  const teamUsers = emptyIndex > -1 ? text.substr(emptyIndex + 1).trim() : '';
+
+  if (!teamName) {
+    telegramManager.talkToBot(chatId, `What's the name of the team?`)
+      .then(t => res.end('Name of the team required', t))
+      .catch(e => res.end('Name of the team required', e));
+    return;
+  }
+
+  try {
+    const users = messageManager.extractUniqueUsernames(message, teamUsers);
+    const botMessage = `Team: ${teamName} created.\nYou can now do \`/ping ${teamName}\` to notify all the users in this team`;
+    let update = {
+      message_id: message.message_id
+    };
+    update[teamName] = users;
+    ref.update(update).then(m => {
+      telegramManager.talkToBot(chatId, botMessage)
+        .then(() => res.end('Team updated:', m))
+        .catch(err => {
+          console.log(err);
+          return res.end('Error updating team:', err);
+        });
+    }).catch(e => {
+      console.log('Error updating db:', e);
+      return res.end('Error updating db:', e);
+    });
+  } catch (e) {
+    return telegramManager.talkToBot(chatId, `Which users will be part of ${teamName}?`)
+      .then(t => res.end('Users required', t))
+      .catch(e => res.end('Users required', e));
+  }
+}
