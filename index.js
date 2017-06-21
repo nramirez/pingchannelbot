@@ -257,7 +257,11 @@ const readTeams = (chatId, chat, res) => {
 
 const _setTeam = (message, chatId, ref, res) => {
   // remove '/team' from the text which length = 5
-  const text = message.text.substr(5).trim();
+  let substrIndex = 5;
+  if (message.text.indexOf('/team@pingchannelbot') === 0) {
+    substrIndex = 20;
+  }
+  const text = message.text.substr(substrIndex).trim();
   const emptyIndex = text.indexOf(' ');
   const teamName = emptyIndex < 0 ? text : text.substr(0, emptyIndex);
   const teamUsers = emptyIndex > -1 ? text.substr(emptyIndex + 1).trim() : '';
