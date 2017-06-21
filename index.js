@@ -165,7 +165,11 @@ const pingAll = (chatId, text, res) => {
 
 const pingTeam = (message, chatId, chat, res) => {
   // /ping team-name
-  const teamName = message.text.substr(5).trim();
+  let substrIndex = 5;
+  if (message.text.indexOf('/ping@pingchannelbot') === 0) {
+    substrIndex = 20;
+  }
+  const teamName = message.text.substr(substrIndex).trim();
   let msg = 'No users in this team.';
   if (!teamName) {
     msg = 'Please specify the name of the team';
