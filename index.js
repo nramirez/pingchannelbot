@@ -5,8 +5,8 @@ const messageManager = require('./messageManager');
 const telegramManager = require('./telegramManager');
 const firebase = require('firebase');
 const config = require('./config');
-var mixpanel = require('mixpanel').init(config.mixpanelToken);
-var moment = require('moment');
+const mixpanel = require('mixpanel').init(config.mixpanelToken);
+const moment = require('moment');
 
 firebase.initializeApp(config.firebase);
 const db = firebase.database();
@@ -87,7 +87,7 @@ app.post('/new-message', (req, res) => {
       } else if (message.new_chat_participant || message.left_chat_participant) {
         return addOrRemoveParticipant(message, chatId, usernames, ref, res);
       }
-    }, e => {
+    }).catch(e => {
       mixpanel.track('Error reading chat from db', { e });
       return res.end('Error reading chat from db', { e });
     });
@@ -121,33 +121,33 @@ const setUsernames = (message, chatId, usernames, ref, res) => {
         }).then(m => {
           telegramManager.talkToBot(chatId, 'Usernames added.')
             .then(() => {
-              mixpanel.track('Usernames set', { users, message });
+              mixpanel.track('talkToBot setUsernames', { users, message });
               res.end('Updated message:', m);
             })
             .catch(e => {
-              mixpanel.track('Error talkToBot new usernames', { e, message });
+              mixpanel.track('Error talkToBot setUsernames', { e, message });
               res.end('Error updating db usernames ', e);
             });
         }).catch(e => {
-          mixpanel.track('Error updating chat users', { e, chatId, message });
-          res.end('Error updating chat users', e);
+          mixpanel.track('Error setUsernames getChatAdministrators', { e, chatId, message });
+          return res.end('Error setUsernames getChatAdministrators', e);
         });
       } else {
         telegramManager.talkToBot(chatId, 'This action is only allowed for admins.')
           .then(() => {
-            mixpanel.track('Not Admin', { chatId, message });
+            mixpanel.track('talkToBot setUsernames Admin Only', { chatId, message });
             res.end('This action is only allowed for admins.');
           }).catch(e => {
             mixpanel.track('Error talkToBot setUsernames Admin Only', { e, chatId, message });
             res.end('Error: ', e);
           });
       }
-    }, e => {
-      mixpanel.track('Error getChatAdministrators', { e, chatId, message });
-      res.end('Error getChatAdministrators', err);
+    }).catch(e => {
+      mixpanel.track('Error setUsernames getChatAdministrators', { e, chatId, message });
+      res.end('Error setUsernames getChatAdministrators', err);
     });
   } else {
-    mixpanel.track('setUsernames Undefined message.from', { chatId, message });
+    mixpanel.track('setUsernames undefined message.from', { chatId, message });
     res.end('Error message.from is undefined');
   }
 };
@@ -196,7 +196,7 @@ const clearUsernames = (message, chatId, ref, res) => {
           telegramManager.talkToBot(chatId, 'All cleared.').then(() => {
             mixpanel.track('talkToBot clearUsernames', { chatId, message });
             return res.end('All cleared.');
-          }, e => {
+          }).catch(e => {
             mixpanel.track('Error talkToBot clearUsernames', { chatId, message });
             return res.end('Error: ', e);
           });
@@ -204,12 +204,12 @@ const clearUsernames = (message, chatId, ref, res) => {
           telegramManager.talkToBot(chatId, 'This action is only allowed for admins.').then(() => {
             mixpanel.track('talkToBot clearUsernames Admin Only', { chatId, message });
             res.end('This action is only allowed for admins.');
-          }, err => {
-            console.log(err);
-            res.end('Error: ', err);
+          }).catch(e => {
+            mixpanel.track('Error talkToBot clearUsernames Admin Only', { e, message });
+            res.end('Error talkToBot clearUsernames Admin Only', e);
           });
         }
-      }, e => {
+      }).catch(e => {
         mixpanel.track('Error clearUsernames getChatAdministrators', { chatId, message });
         res.end('Error: ', e);
       });
@@ -237,7 +237,7 @@ const addOrRemoveParticipant = (message, chatId, usernames, ref, res) => {
   telegramManager.talkToBot(chatId, msg).then(() => {
     mixpanel.track('talkToBot addOrRemoveParticipant', { chatId, message, msg });
     return res.end(msg);
-  }, e => {
+  }).catch(e => {
     mixpanel.track('Error talkToBot addOrRemoveParticipant', { chatId, message, msg });
     return res.end('Error talkToBot addOrRemoveParticipant: ', e);
   });
@@ -247,15 +247,15 @@ const readTeams = (chatId, chat, res) => {
   const teams = Object.keys(chat).filter(t => t !== 'usernames').join('\n');
   telegramManager.talkToBot(chatId, teams)
     .then(t => {
-      mixpanel.track('Error talkToBot', { chatId, teams });
+      mixpanel.track('talkToBot readTeams', { chatId, teams });
       res.end('Team list displayed', t);
     }).catch(e => {
       mixpanel.track('Error talkToBot readTeams', { chatId, teams });
       res.end('Team list error', e);
     });
-
 };
-const setTeam = (message, chatId, ref, res) => {
+
+const _setTeam = (message, chatId, ref, res) => {
   // remove '/team' from the text which length = 5
   const text = message.text.substr(5).trim();
   const emptyIndex = text.indexOf(' ');
@@ -265,11 +265,11 @@ const setTeam = (message, chatId, ref, res) => {
   if (!teamName) {
     telegramManager.talkToBot(chatId, `What's the name of the team?`)
       .then(t => {
-        mixpanel.track('Name of the team required', { chatId });
+        mixpanel.track('talkToBot _setTeam: Team name required', { chatId });
         return res.end('Name of the team required', t)
       }).catch(e => {
-        mixpanel.track('Error talkToBot setTeam', { chatId, teams });
-        res.end('Name of the team required', e);
+        mixpanel.track('Error talkToBot _setTeam: team required', { chatId, teams });
+        res.end('Error talkToBot _setTeam: team required', e);
       });
     return;
   }
@@ -287,21 +287,40 @@ const setTeam = (message, chatId, ref, res) => {
           mixpanel.track('setTeam', { chatId, m });
           return res.end('Team updated:', m);
         }).catch(e => {
-          mixpanel.track('setTeam', { chatId, m });
-          return res.end('Error updating team:', e);
+          mixpanel.track('Error talkToBot setTeam', { e, message });
+          return res.end('Error talkToBot setTeam', e);
         });
     }).catch(e => {
-      mixpanel.track('Error: Updating', { chatId, m, e });
-      return res.end('Error updating db:', e);
+      mixpanel.track('Error setTeam db update', { chatId, m, e });
+      return res.end('Error setTeam db update', e);
     });
   } catch (e) {
     return telegramManager.talkToBot(chatId, `Which users will be part of ${teamName}?`)
       .then(t => {
         mixpanel.track('talkToBot setTeam:usernames', { chatId, e, t });
-        return res.end('talkToBot setTeam usernames', t);
+        return res.end('talkToBot setTeam:usernames', t);
       }).catch(e => {
         mixpanel.track('Error talkToBot setTeam:usernames', { chatId, e, t });
-        res.end('Error talkToBot setTeam:usernames', chatId, e, t );
+        res.end('Error talkToBot setTeam:usernames', chatId, e, t);
       });
   }
 }
+
+const setTeam = (message, chatId, ref, res) => {
+  if (message.from) {
+    telegramManager.getChatAdministrators(chatId).then(({ data }) => {
+      if (isAdmin(data.result, message.from.username)) {
+        return _setTeam(message, chatId, ref, res);
+      } else {
+        mixpanel.track('setTeam  Admin Only', { chatId, message });
+        return res.end('setTeam  Admin Only', e);
+      }
+    }).catch(e => {
+      mixpanel.track('talkToBot setTeam Admin Only', { chatId, message });
+      return res.end('talkToBot setTeam Admin Only', e);
+    });
+  } else {
+    mixpanel.track('setTeam undefined message.from', { chatId, message });
+    return res.end('setTeam undefined message.from');
+  }
+};
