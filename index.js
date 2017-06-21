@@ -20,14 +20,17 @@ app.post('/new-message', (req, res) => {
   const { message } = req.body;
 
   if (!message) {
-    // In case a message is not present, or if our message does not have the word marco in it, do nothing and return an empty response
+    mixpanel.track('message not present: ', { body: req.body });
+
     return res.end('Error: message is undefined');
   }
 
   // Somehow we're getting a message with { message: [knownObject], update_id: 32413}
   // We're only interested in the message object
-  if (message.message)
+  if (message.message) {
+    mixpanel.track('unexpected inner message', { message: message });
     message = message.message;
+  }
 
   let allowedDate = moment().add(-5, 'm');
   const messageDate = moment.unix(message.date);
@@ -39,7 +42,8 @@ app.post('/new-message', (req, res) => {
   });
 
   if (!shouldProcess) {
-    return res.end('Message rejected because it is too old');
+    mixpanel.track('Message rejected due to old date', { messageDate, allowedDate, message });
+    return res.end('Message rejected due to old date');
   }
 
   try {
@@ -50,8 +54,11 @@ app.post('/new-message', (req, res) => {
       const usernames = chat && chat.usernames ? chat.usernames : '';
 
       if (chat && chat.message_id && chat.message_id > message.message_id) {
-        console.log('Discarding... This is an older message', chat.message_id, message.message_id);
-        return res.end('Discarding... This is an older message', chat.message_id, message.message_id);
+        mixpanel.track('Message rejected due to old chat id', {
+          chat_message_id: chat.message_id,
+          message: message
+        });
+        return res.end('Message rejected due to old chat id', chat.message_id, message.message_id);
       }
 
       if (messageManager.isCommand(message.entities)) {
@@ -80,13 +87,14 @@ app.post('/new-message', (req, res) => {
       } else if (message.new_chat_participant || message.left_chat_participant) {
         return addOrRemoveParticipant(message, chatId, usernames, ref, res);
       }
-    }, error => {
-      console.log('Error reading db:', error);
-      return res.end('Error reading db:', error);
+    }, e => {
+      mixpanel.track('Error reading chat from db', { e });
+      return res.end('Error reading chat from db', { e });
     });
-  } catch (err) {
+  } catch (e) {
+    mixpanel.track('Error processing message', { e, message });
     telegramManager.talkToBot(chatId, `Sorry we didn't get that`);
-    return res.end('Error somewhere: ', err);
+    return res.end('Error somewhere: ', e);
   };
 
   return res.end('end of the request');
@@ -106,44 +114,52 @@ const setUsernames = (message, chatId, usernames, ref, res) => {
   if (message.from) {
     telegramManager.getChatAdministrators(chatId).then(({ data }) => {
       if (isAdmin(data.result, message.from.username)) {
+        const users = messageManager.extractUniqueUsernames(message, usernames);
         ref.update({
           message_id: message.message_id,
-          usernames: messageManager.extractUniqueUsernames(message, usernames),
+          usernames: users,
         }).then(m => {
           telegramManager.talkToBot(chatId, 'Usernames added.')
-            .then(() => res.end('Updated message:', m))
-            .catch(err => {
-              console.log(err);
-              res.end('Error: ', err);
+            .then(() => {
+              mixpanel.track('Usernames set', { users, message });
+              res.end('Updated message:', m);
+            })
+            .catch(e => {
+              mixpanel.track('Error talkToBot new usernames', { e, message });
+              res.end('Error updating db usernames ', e);
             });
         }).catch(e => {
-          console.log('Error updating db:', e);
-          res.end('Error updating db:', e);
+          mixpanel.track('Error updating chat users', { e, chatId, message });
+          res.end('Error updating chat users', e);
         });
       } else {
         telegramManager.talkToBot(chatId, 'This action is only allowed for admins.')
-          .then(() => res.end('This action is only allowed for admins.'))
-          .catch(err => {
-            console.log(err);
-            res.end('Error: ', err);
+          .then(() => {
+            mixpanel.track('Not Admin', { chatId, message });
+            res.end('This action is only allowed for admins.');
+          }).catch(e => {
+            mixpanel.track('Error talkToBot setUsernames Admin Only', { e, chatId, message });
+            res.end('Error: ', e);
           });
       }
-    }, err => {
-      console.log(err);
-      res.end('Error: ', err);
+    }, e => {
+      mixpanel.track('Error getChatAdministrators', { e, chatId, message });
+      res.end('Error getChatAdministrators', err);
     });
   } else {
-    console.log('Error message.from is undefined');
+    mixpanel.track('setUsernames Undefined message.from', { chatId, message });
     res.end('Error message.from is undefined');
   }
 };
 
 const pingAll = (chatId, text, res) => {
   telegramManager.talkToBot(chatId, text)
-    .then(() => res.end('Message posted!'))
-    .catch(err => {
-      console.log(err);
-      return res.end('Error: ', err);
+    .then(() => {
+      mixpanel.track('talkToBot PingAll', { chatId, text });
+      return res.end('Message posted!');
+    }).catch(e => {
+      mixpanel.track('Error talkToBot PingAll', { e, chatId, text });
+      return res.end('Error talkToBot PingAll', e);
     });
 };
 
@@ -160,10 +176,12 @@ const pingTeam = (message, chatId, chat, res) => {
   }
 
   telegramManager.talkToBot(chatId, msg)
-    .then(() => res.end('Message posted!'))
-    .catch(err => {
-      console.log(err);
-      return res.end('Error: ', err);
+    .then(() => {
+      mixpanel.track('talkToBot pingTeam', { chatId, msg });
+      return res.end('Message posted!', chatId, msg)
+    }).catch(e => {
+      mixpanel.track('Error talkToBot pingTeam', { chatId, messsage });
+      return res.end('Error: ', e);
     });
 };
 
@@ -176,26 +194,28 @@ const clearUsernames = (message, chatId, ref, res) => {
             usernames: '',
           });
           telegramManager.talkToBot(chatId, 'All cleared.').then(() => {
-            res.end('All cleared.');
-          }, err => {
-            console.log(err);
-            res.end('Error: ', err);
+            mixpanel.track('talkToBot clearUsernames', { chatId, message });
+            return res.end('All cleared.');
+          }, e => {
+            mixpanel.track('Error talkToBot clearUsernames', { chatId, message });
+            return res.end('Error: ', e);
           });
         } else {
           telegramManager.talkToBot(chatId, 'This action is only allowed for admins.').then(() => {
+            mixpanel.track('talkToBot clearUsernames Admin Only', { chatId, message });
             res.end('This action is only allowed for admins.');
           }, err => {
             console.log(err);
             res.end('Error: ', err);
           });
         }
-      }, err => {
-        console.log(err);
-        res.end('Error: ', err);
+      }, e => {
+        mixpanel.track('Error clearUsernames getChatAdministrators', { chatId, message });
+        res.end('Error: ', e);
       });
   } else {
-    console.log('Error message.from is undefined');
-    res.end('Error message.from is undefined');
+    mixpanel.track('clearUsernames undefined message.from', { chatId, message });
+    res.end('Error clearUsernames undefined message.from');
   }
 };
 
@@ -215,18 +235,24 @@ const addOrRemoveParticipant = (message, chatId, usernames, ref, res) => {
     `${message.left_chat_participant.username} was removed from the list.`;
 
   telegramManager.talkToBot(chatId, msg).then(() => {
+    mixpanel.track('talkToBot addOrRemoveParticipant', { chatId, message, msg });
     return res.end(msg);
-  }, err => {
-    console.log(err);
-    return res.end('Error: ', err);
+  }, e => {
+    mixpanel.track('Error talkToBot addOrRemoveParticipant', { chatId, message, msg });
+    return res.end('Error talkToBot addOrRemoveParticipant: ', e);
   });
 };
 
 const readTeams = (chatId, chat, res) => {
   const teams = Object.keys(chat).filter(t => t !== 'usernames').join('\n');
   telegramManager.talkToBot(chatId, teams)
-    .then(t => res.end('Team list displayed', t))
-    .catch(e => res.end('Team list error', e));
+    .then(t => {
+      mixpanel.track('Error talkToBot', { chatId, teams });
+      res.end('Team list displayed', t);
+    }).catch(e => {
+      mixpanel.track('Error talkToBot readTeams', { chatId, teams });
+      res.end('Team list error', e);
+    });
 
 };
 const setTeam = (message, chatId, ref, res) => {
@@ -238,8 +264,13 @@ const setTeam = (message, chatId, ref, res) => {
 
   if (!teamName) {
     telegramManager.talkToBot(chatId, `What's the name of the team?`)
-      .then(t => res.end('Name of the team required', t))
-      .catch(e => res.end('Name of the team required', e));
+      .then(t => {
+        mixpanel.track('Name of the team required', { chatId });
+        return res.end('Name of the team required', t)
+      }).catch(e => {
+        mixpanel.track('Error talkToBot setTeam', { chatId, teams });
+        res.end('Name of the team required', e);
+      });
     return;
   }
 
@@ -252,18 +283,25 @@ const setTeam = (message, chatId, ref, res) => {
     update[teamName] = users;
     ref.update(update).then(m => {
       telegramManager.talkToBot(chatId, botMessage)
-        .then(() => res.end('Team updated:', m))
-        .catch(err => {
-          console.log(err);
-          return res.end('Error updating team:', err);
+        .then(() => {
+          mixpanel.track('setTeam', { chatId, m });
+          return res.end('Team updated:', m);
+        }).catch(e => {
+          mixpanel.track('setTeam', { chatId, m });
+          return res.end('Error updating team:', e);
         });
     }).catch(e => {
-      console.log('Error updating db:', e);
+      mixpanel.track('Error: Updating', { chatId, m, e });
       return res.end('Error updating db:', e);
     });
   } catch (e) {
     return telegramManager.talkToBot(chatId, `Which users will be part of ${teamName}?`)
-      .then(t => res.end('Users required', t))
-      .catch(e => res.end('Users required', e));
+      .then(t => {
+        mixpanel.track('talkToBot setTeam:usernames', { chatId, e, t });
+        return res.end('talkToBot setTeam usernames', t);
+      }).catch(e => {
+        mixpanel.track('Error talkToBot setTeam:usernames', { chatId, e, t });
+        res.end('Error talkToBot setTeam:usernames', chatId, e, t );
+      });
   }
 }
