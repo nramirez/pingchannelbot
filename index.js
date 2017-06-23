@@ -275,7 +275,13 @@ const readTeams = (chatId, chat, res) => {
     .filter(t => t !== 'usernames')
     .map(team => chat[team].name)
     .join('\n');
-  const message = `Teams:\n ${teams}`;                  
+  
+  const message = 'No teams. Use /team command to add a new team.';
+
+  if (teams.length > 0) {
+    message = `Teams:\n ${teams}`;
+  }
+
   telegramManager.talkToBot(chatId, message)
     .then(t => {
       mixpanel.track('talkToBot readTeams', { chatId, teams });
