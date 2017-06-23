@@ -140,7 +140,7 @@ const setUsernames = (message, chatId, usernames, ref, res) => {
               mixpanel.track('talkToBot setUsernames no usernames specified', { chatId, message });
               res.end('Please, specify usernames to be added.');
             }).catch(e => {
-              mixpanel.track('Error talkToBot setUsernames Admin Only', { e, chatId, message });
+              mixpanel.track('Error talkToBot setUsernames no usernames specified', { e, chatId, message });
               res.end('Error: ', e);
             });
         }
@@ -345,8 +345,14 @@ const setTeam = (message, chatId, ref, res) => {
       if (isAdmin(data.result, message.from.username)) {
         return _setTeam(message, chatId, ref, res);
       } else {
-        mixpanel.track('setTeam  Admin Only', { chatId, message });
-        return res.end('setTeam  Admin Only', e);
+        telegramManager.talkToBot(chatId, 'This action is only allowed for admins.')
+          .then(() => {
+            mixpanel.track('setTeam Admin Only', { chatId, message });
+            return res.end('setTeam Admin Only', e);
+          }).catch(e => {
+            mixpanel.track('Error talkToBot setTeam Admin Only', { e, chatId, message });
+            res.end('Error: ', e);
+          });
       }
     }).catch(e => {
       mixpanel.track('talkToBot setTeam Admin Only', { chatId, message });
