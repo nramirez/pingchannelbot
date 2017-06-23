@@ -169,14 +169,14 @@ const pingTeam = (message, chatId, chat, res) => {
   if (message.text.indexOf('/ping@pingchannelbot') === 0) {
     substrIndex = 20;
   }
-  const teamName = message.text.substr(substrIndex).trim();
+  const teamName = message.text.substr(substrIndex).trim().toLowerCase();
   let msg = 'No users in this team.';
   if (!teamName) {
     msg = 'Please specify the name of the team';
-  } else if (!chat[teamName])
+  } else if (!chat[teamName].users)
     msg = 'No users in this team.';
   else {
-    msg = chat[teamName];
+    msg = chat[teamName].users;
   }
 
   telegramManager.talkToBot(chatId, msg)
@@ -248,8 +248,12 @@ const addOrRemoveParticipant = (message, chatId, usernames, ref, res) => {
 };
 
 const readTeams = (chatId, chat, res) => {
-  const teams = Object.keys(chat).filter(t => t !== 'usernames').join('\n');
-  telegramManager.talkToBot(chatId, teams)
+  const teams = Object.keys(chat)
+                  .filter(t => t !== 'usernames')
+                  .map(team => chat[team].name)
+                  .join('\n');
+  const message = `Teams:\n ${teams}`;                  
+  telegramManager.talkToBot(chatId, message)
     .then(t => {
       mixpanel.track('talkToBot readTeams', { chatId, teams });
       res.end('Team list displayed', t);
@@ -286,9 +290,11 @@ const _setTeam = (message, chatId, ref, res) => {
     const users = messageManager.extractUniqueUsernames(message, teamUsers);
     const botMessage = `Team: ${teamName} created.\nYou can now do \`/ping ${teamName}\` to notify all the users in this team`;
     let update = {
-      message_id: message.message_id
+      message_id: message.message_id,
+      [teamName.toLowerCase()]: {}
     };
-    update[teamName] = users;
+    update[teamName.toLowerCase()].name = teamName;
+    update[teamName.toLowerCase()].users = users;
     ref.update(update).then(m => {
       telegramManager.talkToBot(chatId, botMessage)
         .then(() => {
