@@ -115,23 +115,35 @@ const setUsernames = (message, chatId, usernames, ref, res) => {
     telegramManager.getChatAdministrators(chatId).then(({ data }) => {
       if (isAdmin(data.result, message.from.username)) {
         const users = messageManager.extractUniqueUsernames(message, usernames);
-        ref.update({
-          message_id: message.message_id,
-          usernames: users,
-        }).then(m => {
-          telegramManager.talkToBot(chatId, 'Usernames added.')
+
+        if(users !== usernames) {
+          ref.update({
+            message_id: message.message_id,
+            usernames: users,
+          }).then(m => {
+            telegramManager.talkToBot(chatId, 'Usernames added.')
+              .then(() => {
+                mixpanel.track('talkToBot setUsernames', { users, message });
+                res.end('Updated message:', m);
+              })
+              .catch(e => {
+                mixpanel.track('Error talkToBot setUsernames', { e, message });
+                res.end('Error updating db usernames ', e);
+              });
+          }).catch(e => {
+            mixpanel.track('Error setUsernames getChatAdministrators', { e, chatId, message });
+            return res.end('Error setUsernames getChatAdministrators', e);
+          });
+        } else {
+          telegramManager.talkToBot(chatId, 'Please, specify usernames to be added.')
             .then(() => {
-              mixpanel.track('talkToBot setUsernames', { users, message });
-              res.end('Updated message:', m);
-            })
-            .catch(e => {
-              mixpanel.track('Error talkToBot setUsernames', { e, message });
-              res.end('Error updating db usernames ', e);
+              mixpanel.track('talkToBot setUsernames no usernames specified', { chatId, message });
+              res.end('Please, specify usernames to be added.');
+            }).catch(e => {
+              mixpanel.track('Error talkToBot setUsernames Admin Only', { e, chatId, message });
+              res.end('Error: ', e);
             });
-        }).catch(e => {
-          mixpanel.track('Error setUsernames getChatAdministrators', { e, chatId, message });
-          return res.end('Error setUsernames getChatAdministrators', e);
-        });
+        }
       } else {
         telegramManager.talkToBot(chatId, 'This action is only allowed for admins.')
           .then(() => {
