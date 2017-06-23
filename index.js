@@ -135,10 +135,10 @@ const setUsernames = (message, chatId, usernames, ref, res) => {
             return res.end('Error setUsernames getChatAdministrators', e);
           });
         } else {
-          telegramManager.talkToBot(chatId, 'Please, specify usernames to be added.')
+          telegramManager.talkToBot(chatId, 'Please, specify new usernames to be added.')
             .then(() => {
               mixpanel.track('talkToBot setUsernames no usernames specified', { chatId, message });
-              return res.end('Please, specify usernames to be added.');
+              return res.end('Please, specify new usernames to be added.');
             }).catch(e => {
               mixpanel.track('Error talkToBot setUsernames no usernames specified', { e, chatId, message });
               return res.end('Error: ', e);
