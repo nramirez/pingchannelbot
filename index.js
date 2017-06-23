@@ -75,6 +75,8 @@ app.post('/new-message', (req, res) => {
         } else if (messageManager.isSetTeam(message.text)) {
           return setTeam(message, chatId, ref, res);
         }
+      } else if (messageManager.isReplyToSetUsers(message)) {
+        
       } else if (messageManager.isReplyToSetTeamName(message)) {
         message.text = '/team ' + message.text;
         return setTeam(message, chatId, ref, res);
@@ -135,7 +137,8 @@ const setUsernames = (message, chatId, usernames, ref, res) => {
             return res.end('Error setUsernames getChatAdministrators', e);
           });
         } else {
-          telegramManager.talkToBot(chatId, 'Please, specify new usernames to be added.')
+          telegramManager.talkToBot(chatId, `Which users do you want to add? \n \n
+            Please, remember to use @ and to specify new users`)
             .then(() => {
               mixpanel.track('talkToBot setUsernames no usernames specified', { chatId, message });
               return res.end('Please, specify new usernames to be added.');

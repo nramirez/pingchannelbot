@@ -39,6 +39,7 @@ module.exports = {
     isClear: text => text.toLocaleLowerCase().indexOf('/clear') > -1,
     isReadTeams: text => text.toLocaleLowerCase().indexOf('/teams') > -1,
     isSetTeam: text => text.toLocaleLowerCase().indexOf('/team') > -1,
+    isReplyToSetUsers: msg => msg.reply_to_message && msg.reply_to_message.text.indexOf('Which users do you want to add?') > -1,
     isReplyToSetTeamName: msg => msg.reply_to_message && msg.reply_to_message.text.indexOf(`What's the name of the team?`) > -1,
     isReplyToSetTeamUsers: msg => msg.reply_to_message && msg.reply_to_message.text.indexOf('Which users will be part of') > -1,
 };
