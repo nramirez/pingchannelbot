@@ -1,6 +1,6 @@
 const extractValidUsernames = usernames => {
     const matches = usernames.match(/@[^\s|@]*/g);
-    return matches ? matches.filter(u => u !== '@pingchannelbot') : [];
+    return matches ? matches.filter(u => u !== '@pingchannelbot' && u !== '@') : [];
 };
 
 const joinUsernames = usernames => usernames.size > 0

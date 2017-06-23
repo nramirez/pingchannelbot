@@ -139,7 +139,7 @@ const setUsernames = (message, chatId, usernames, ref, res) => {
         } else {
           telegramManager.talkToBot(
             chatId,
-            'Which users do you want to add? \n Please, remember to use @ and to specify new users')
+            'Which users do you want to add?\nPlease, remember to use @ and to specify new users')
             .then(() => {
               mixpanel.track('talkToBot setUsernames no usernames specified', { chatId, message });
               return res.end('Please, specify new usernames to be added.');
