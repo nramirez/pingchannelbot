@@ -224,8 +224,15 @@ const clearUsernames = (message, chatId, ref, res) => {
 };
 
 const addOrRemoveParticipant = (message, chatId, usernames, ref, res) => {
-  const isValid = (message.new_chat_participant && message.new_chat_participant.username)
-    || (message.left_chat_participant && message.left_chat_participant.username);
+  const isValid = ((
+        message.new_chat_participant &&
+        message.new_chat_participant.username &&
+        message.new_chat_participant.username.indexOf('pingchannelbot') < 0) ||
+      (
+        message.left_chat_participant &&
+        message.left_chat_participant.username &&
+        message.left_chat_participant.username.indexOf('pingchannelbot') < 0
+      ));
 
   if (!isValid)
     return res.end('Undefined username');
