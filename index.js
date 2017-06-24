@@ -5,6 +5,7 @@ const messageManager = require('./messageManager');
 const telegramManager = require('./telegramManager');
 const firebase = require('firebase');
 const config = require('./config');
+const responeMessages = require('./reponseMesages');
 const mixpanel = require('mixpanel').init(config.mixpanelToken);
 const moment = require('moment');
 
@@ -78,7 +79,7 @@ app.post('/new-message', (req, res) => {
       } else if (messageManager.isReplyToSetUsers(message)) {
         setUsernames(message, chatId, usernames, ref, res);
       } else if (messageManager.isReplyToSetTeamName(message)) {
-        message.text = '/team ' + message.text;
+        message.text = `/team ${message.text}`;
         return setTeam(message, chatId, ref, res);
       } else if (messageManager.isReplyToSetTeamUsers(message)) {
         // Which users will be part of teamName?
@@ -86,11 +87,14 @@ app.post('/new-message', (req, res) => {
         const teamName = text.substring(28, text.length - 1);
         message.text = `/team ${teamName} ${message.text}`;
         return setTeam(message, chatId, ref, res);
+      } else if (messageManager.isPingReply(message)) {
+        message.text = `/ping ${message.text}`;
+        return pingTeam(message, chatId, chat, res);
       } else if (message.new_chat_participant || message.left_chat_participant) {
         return addOrRemoveParticipant(message, chatId, usernames, ref, res);
       }
     }).catch(e => {
-      mixpanel.track('Error reading chat from db', { e });
+      mixpanel.track('Error reading chat from db', e);
       return res.end('Error reading chat from db', { e });
     });
   } catch (e) {
@@ -118,7 +122,7 @@ const setUsernames = (message, chatId, usernames, ref, res) => {
       if (isAdmin(data.result, message.from.username)) {
         const users = messageManager.extractUniqueUsernames(message, usernames);
 
-        if(users !== usernames) {
+        if (users !== usernames) {
           ref.update({
             message_id: message.message_id,
             usernames: users,
@@ -188,10 +192,10 @@ const pingTeam = (message, chatId, chat, res) => {
   const teamName = message.text.substr(substrIndex).trim().toLowerCase();
   let msg = 'No users in this team.';
   if (!teamName) {
-    msg = 'Please specify the name of the team';
-  } else if (!chat[teamName].users)
-    msg = 'No users in this team.';
-  else {
+    msg = responeMessages.pingInvalidTeam;
+  } else if (!chat[teamName]) {
+    msg = responeMessages.pingNonExistingTeam;
+  } else if (chat[teamName].users) {
     msg = chat[teamName].users;
   }
 
@@ -201,7 +205,7 @@ const pingTeam = (message, chatId, chat, res) => {
       return res.end('Message posted!', chatId, msg)
     }).catch(e => {
       mixpanel.track('Error talkToBot pingTeam', { chatId, messsage });
-      return res.end('Error: ', e);
+      return res.end('Error talkToBot pingTeam: ', e);
     });
 };
 
@@ -241,9 +245,9 @@ const clearUsernames = (message, chatId, ref, res) => {
 
 const addOrRemoveParticipant = (message, chatId, usernames, ref, res) => {
   const isValid = ((
-      message.new_chat_participant &&
-      message.new_chat_participant.username &&
-      message.new_chat_participant.username.indexOf('pingchannelbot') < 0) ||
+    message.new_chat_participant &&
+    message.new_chat_participant.username &&
+    message.new_chat_participant.username.indexOf('pingchannelbot') < 0) ||
     (
       message.left_chat_participant &&
       message.left_chat_participant.username &&
@@ -275,7 +279,7 @@ const readTeams = (chatId, chat, res) => {
     .filter(t => t !== 'usernames' && t !== 'message_id')
     .map(team => chat[team].name)
     .join('\n');
-  
+
   const message = teams.length ? `Teams:\n ${teams}`
     : 'No teams. Use /team command to add a new team.';
 
@@ -301,7 +305,7 @@ const _setTeam = (message, chatId, ref, res) => {
   const teamUsers = emptyIndex > -1 ? text.substr(emptyIndex + 1).trim() : '';
 
   if (!teamName) {
-    telegramManager.talkToBot(chatId, `What's the name of the team?`)
+    telegramManager.talkToBot(chatId, reponseMesages.setInvalidTeam)
       .then(t => {
         mixpanel.track('talkToBot _setTeam: Team name required', { chatId });
         return res.end('Name of the team required', t)

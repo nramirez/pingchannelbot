@@ -1,3 +1,5 @@
+const reponseMesages = require('./reponseMesages');
+
 const extractValidUsernames = usernames => {
     const matches = usernames.match(/@[^\s|@]*/g);
     return matches ? matches.filter(u => u !== '@pingchannelbot' && u !== '@') : [];
@@ -40,6 +42,7 @@ module.exports = {
     isReadTeams: text => text.toLocaleLowerCase().indexOf('/teams') > -1,
     isSetTeam: text => text.toLocaleLowerCase().indexOf('/team') > -1,
     isReplyToSetUsers: msg => msg.reply_to_message && msg.reply_to_message.text.indexOf('Which users do you want to add?') > -1,
-    isReplyToSetTeamName: msg => msg.reply_to_message && msg.reply_to_message.text.indexOf(`What's the name of the team?`) > -1,
+    isReplyToSetTeamName: msg => msg.reply_to_message && msg.reply_to_message.text.indexOf(reponseMesages.setInvalidTeam) > -1,
     isReplyToSetTeamUsers: msg => msg.reply_to_message && msg.reply_to_message.text.indexOf('Which users will be part of') > -1,
+    isPingReply: msg => msg.reply_to_message && msg.reply_to_message.text.indexOf(reponseMesages.pingInvalidTeam) > -1,
 };
