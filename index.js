@@ -210,7 +210,7 @@ const clearUsernames = (message, chatId, ref, res) => {
     telegramManager.getChatAdministrators(chatId)
       .then(({ data }) => {
         if (isAdmin(data.result, message.from.username)) {
-          ref.set({
+          ref.update({
             usernames: '',
           });
           telegramManager.talkToBot(chatId, 'All cleared.').then(() => {
@@ -253,7 +253,7 @@ const addOrRemoveParticipant = (message, chatId, usernames, ref, res) => {
   if (!isValid)
     return res.end('Undefined username');
 
-  ref.set({
+  ref.update({
     'usernames': messageManager.extractUniqueUsernames(message, usernames),
   });
 
