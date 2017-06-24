@@ -272,7 +272,7 @@ const addOrRemoveParticipant = (message, chatId, usernames, ref, res) => {
 
 const readTeams = (chatId, chat, res) => {
   const teams = Object.keys(chat)
-    .filter(t => t !== 'usernames')
+    .filter(t => t !== 'usernames' && t !== 'message_id')
     .map(team => chat[team].name)
     .join('\n');
   
