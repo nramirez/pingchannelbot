@@ -141,15 +141,13 @@ const setUsernames = (message, chatId, usernames, ref, res) => {
             return res.end('Error setUsernames getChatAdministrators', e);
           });
         } else {
-          telegramManager.talkToBot(
-            chatId,
-            'Which users do you want to add?\nPlease, remember to use @ and to specify new users')
+          telegramManager.talkToBot(chatId, responeMessages.setInvalidUsernames)
             .then(() => {
               mixpanel.track('talkToBot setUsernames no usernames specified', { chatId, message });
               return res.end('Please, specify new usernames to be added.');
             }).catch(e => {
               mixpanel.track('Error talkToBot setUsernames no usernames specified', { e, chatId, message });
-              return res.end('Error: ', e);
+              return res.end('Error talkToBot setUsernames no usernames specified', e);
             });
         }
       } else {
@@ -159,7 +157,7 @@ const setUsernames = (message, chatId, usernames, ref, res) => {
             return res.end('This action is only allowed for admins.');
           }).catch(e => {
             mixpanel.track('Error talkToBot setUsernames Admin Only', { e, chatId, message });
-            return res.end('Error: ', e);
+            return res.end('Error talkToBot setUsernames Admin Only', e);
           });
       }
     }).catch(e => {
@@ -167,6 +165,14 @@ const setUsernames = (message, chatId, usernames, ref, res) => {
       return res.end('Error setUsernames getChatAdministrators', err);
     });
   } else {
+    telegramManager.talkToBot(chatId, `You don't have a username, you need one for this action.`)
+      .then(() => {
+        mixpanel.track('talkToBot setUsernames no username', { chatId, message });
+        return res.end('talkToBot setUsernames no username');
+      }).catch(e => {
+        mixpanel.track('Error talkToBot setUsernames no username', { e, chatId, message });
+        return res.end('Error talkToBot setUsernames no username: ', e);
+      });
     mixpanel.track('setUsernames undefined message.from', { chatId, message });
     return res.end('Error message.from is undefined');
   }
@@ -189,7 +195,8 @@ const pingTeam = (message, chatId, chat, res) => {
   if (message.text.indexOf('/ping@pingchannelbot') === 0) {
     substrIndex = 20;
   }
-  const teamName = message.text.substr(substrIndex).trim().toLowerCase();
+  const teamName = message.text.substr(substrIndex)
+    .trim().toLowerCase().split(' ')[0]; // Take only the first word
   let msg = 'No users in this team.';
   if (!teamName) {
     msg = responeMessages.pingInvalidTeam;
