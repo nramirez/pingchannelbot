@@ -287,7 +287,7 @@ const readTeams = (chatId, chat, res) => {
     .map(team => chat[team].name)
     .join('\n');
 
-  const message = teams.length ? `Teams:\n ${teams}`
+  const message = teams.length ? `Teams:\n${teams}`
     : 'No teams. Use /team command to add a new team.';
 
   telegramManager.talkToBot(chatId, message)
