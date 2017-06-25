@@ -64,7 +64,7 @@ app.post('/new-message', (req, res) => {
 
       if (messageManager.isCommand(message.entities)) {
         if (messageManager.isSet(message.text)) {
-          setUsernames(message, chatId, usernames, ref, res);
+          return setUsernames(message, chatId, usernames, ref, res);
         } else if (messageManager.isPingAll(message.text)) {
           return pingAll(chatId, usernames || 'No usernames added. Use set command to add them.', res);
         } else if (messageManager.isPing(message.text)) {
@@ -77,7 +77,7 @@ app.post('/new-message', (req, res) => {
           return setTeam(message, chatId, ref, res);
         }
       } else if (messageManager.isReplyToSetUsers(message)) {
-        setUsernames(message, chatId, usernames, ref, res);
+        return setUsernames(message, chatId, usernames, ref, res);
       } else if (messageManager.isReplyToSetTeamName(message)) {
         message.text = `/team ${message.text}`;
         return setTeam(message, chatId, ref, res);
@@ -117,7 +117,7 @@ app.listen(config.currentPort, () => {
 const isAdmin = (admins, user) => admins.filter(admin => admin.user.username === user).length > 0;
 
 const setUsernames = (message, chatId, usernames, ref, res) => {
-  if (message.from) {
+  if (message.from && message.from.username) {
     telegramManager.getChatAdministrators(chatId).then(({ data }) => {
       if (isAdmin(data.result, message.from.username)) {
         const users = messageManager.extractUniqueUsernames(message, usernames);
@@ -165,7 +165,7 @@ const setUsernames = (message, chatId, usernames, ref, res) => {
       return res.end('Error setUsernames getChatAdministrators', err);
     });
   } else {
-    telegramManager.talkToBot(chatId, `You don't have a username, you need one for this action.`)
+    telegramManager.talkToBot(chatId, `You don't have username, you need one for this action.`)
       .then(() => {
         mixpanel.track('talkToBot setUsernames no username', { chatId, message });
         return res.end('talkToBot setUsernames no username');
