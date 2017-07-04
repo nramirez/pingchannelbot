@@ -114,6 +114,8 @@ axios.post('https://api.telegram.org/getChatAdministrators', {
 
 And that’s it! All set! :1st_place_medal:
 
+The code is really simple, we hope this helps you build a great bot we can use someday.
+
 # How our bot works
 
 You only need to add @pinchannelbot to a group, one of the user admins has to manually set the users that want to be notify when someone does /here or /channel by doing:
@@ -125,11 +127,10 @@ You only need to add @pinchannelbot to a group, one of the user admins has to ma
 The bot will add to the list any user newly added to the group and will remove from the list any user removed from the group.
 Then anyone can notify everyone in the channel by doing:
 ```
-/ping
 /channel
 /here
 ```
 
-The code is really simple, we hope this helps you build a great bot we can use someday.
+You can also create `teams`. Let's say that you don't want to notify everyone in the channel when your favorite football team is playing but just to your friends who like the same team, then you just need to create a team using `/team`, add your friends and to notify them `/ping teamName`. You can see all created teams use `/teams`.
 
 ### Happy coding!
