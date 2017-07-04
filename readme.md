@@ -131,6 +131,13 @@ Then anyone can notify everyone in the channel by doing:
 /here
 ```
 
-You can also create `teams`. Let's say that you don't want to notify everyone in the channel when your favorite football team is playing but just to your friends who like the same team, then you just need to create a team using `/team`, add your friends and to notify them `/ping teamName`. You can see all created teams use `/teams`.
+You can also create `teams`. Let's say that you don't want to notify everyone in the channel when your favorite football team is playing but just to your friends who like the same team.
+
+You can manage the teams with the following commands:
+```
+* /team teamName // creates a team named teamName
+* /ping teamName // notifies everyone who is part of this team
+* /team // display the list of the existing teams
+```
 
 ### Happy coding!
