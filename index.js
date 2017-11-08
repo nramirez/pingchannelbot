@@ -272,13 +272,7 @@ const addOrRemoveParticipant = (message, chatId, usernames, ref, res) => {
     `${message.new_chat_participant.username} was added to the list.` :
     `${message.left_chat_participant.username} was removed from the list.`;
 
-  telegramManager.talkToBot(chatId, msg).then(() => {
-    mixpanel.track('talkToBot addOrRemoveParticipant', { chatId, message, msg });
-    return res.end(msg);
-  }).catch(e => {
-    mixpanel.track('Error talkToBot addOrRemoveParticipant', { chatId, message, msg });
-    return res.end('Error talkToBot addOrRemoveParticipant: ', e);
-  });
+  return res.end(msg);
 };
 
 const readTeams = (chatId, chat, res) => {
